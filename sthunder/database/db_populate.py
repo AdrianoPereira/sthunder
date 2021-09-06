@@ -134,6 +134,46 @@ def job_city():
         dbq.insert_city(name=row['nome'], uf=row['uf'], population=row['populacao'], gpd=row['pib'], geom=row['geometry'].wkt)
 
 
+def job_land_class():
+    db = Database()
+    country_coords = db.session.query(
+        Country.name, FlashCoordinate.geom.ST_AsText()
+    ).filter(
+        Country.name == 'Brazil',
+        func.ST_Contains(Country.geom, FlashCoordinate.geom)
+    ).all()
+
+    for row in country_coords:
+        coord = swkt.loads(row[1])
+        coord_id = session.query(
+            FlashCoordinate.id
+        ).filter(FlashCoordinate.geom == row[1]).first()[0]
+
+        tjs = service.tj(latitude=coord.y, longitude=coord.x,
+                         collections='mapbiomas5_amazonia,mapbiomas5_cerrado,'
+                                     'mapbiomas5_caatinga,'
+                                     'mapbiomas5_mata_atlantica,'
+                                     'mapbiomas5_pampa,mapbiomas5_pantanal')
+
+        for tj in tjs['result']['trajectory']:
+            temp = session.query(
+                LandClass.class_name, LandClass.collection,
+                LandClass.date, LandClass.date,
+                LandClass.coords
+            ).filter(
+                LandClass.class_name==tj['class'],
+                LandClass.collection==tj['collection'],
+                LandClass.date==int(tj['date']),
+                LandClass.coords==coord_id
+            ).all()
+
+            if len(temp) == 0:
+                dbq.insert_land_class(class_name=tj['class'],
+                                      collection=tj['collection'],
+                                      date=int(tj['date']), coords=coord_id)
+    db.session.close()
+
+
 if __name__ == "__main__":
     # job_region()
     # job_country()
