@@ -1,10 +1,9 @@
-import sys; sys.path.insert(0, "/home/adriano/sthunder")
 import os
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from wlts import WLTS
 from sthunder.database import db_schema as dbs
-from sthunder.database import db_connection
+from sthunder.database.Database import db_connection
 
 
 @db_connection
