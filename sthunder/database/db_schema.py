@@ -8,6 +8,8 @@ from geoalchemy2 import Geometry
 from shapely import wkt as swkt
 from shapely import geometry as sgeom
 import geopandas as gpd
+from sqlalchemy_utils.view import create_view
+
 
 
 Base = declarative_base()
@@ -102,5 +104,44 @@ class LandClass(Base):
     coords = Column(Integer, ForeignKey('flash_coordinate.id'))
 
 
+# class MonthlyStateFlashesView(Base):
+#     __table__ = create_view(
+#         name='monthly_state_flashes_view',
+#         selectable=select(
+#             [
+#                 State.uf, FlashSpatioTemporal.total, FlashDatetime.datetime,
+#                 FlashCoordinate.geom
+#             ],
+#             from_obj=(
+#                 State.__table__.join(
+#                     FlashCoordinate,
+#                     func.st_contains(State.geom, FlashCoordinate.geom)
+#                 ),
+#                 FlashCoordinate.__table__.join(
+#                     FlashSpatioTemporal,
+#                     FlashCoordinate.id == FlashSpatioTemporal.coords
+#                 ),
+#                 FlashSpatioTemporal.__table__.join(
+#                     FlashDatetime,
+#                     FlashDatetime.id == FlashSpatioTemporal.coords
+#                 )
+#             )
+#         ),
+#         metadata=Base.metadata
+#     )
+
+
 if __name__ == "__main__":
-    pass
+    print("file db_schema.py")
+
+    DB_USER = os.environ['USER_POSTGRES']
+    DB_PASS = os.environ['PASS_POSTGRES']
+    DB_PORT = '5432'
+    DB_HOST = '127.0.0.1'
+    DB_NAME = 'sthunder'
+    DB_URI = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/' \
+             f'{DB_NAME}'
+
+    engine = create_engine(DB_URI, echo=True)
+
+    Base.metadata.create_all(engine)
